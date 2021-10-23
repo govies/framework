@@ -1,0 +1,3 @@
+server:
+  applicationName: framework-testing
+  port: 8080
