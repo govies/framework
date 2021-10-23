@@ -1,10 +1,34 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"fmt"
+	"github.com/spf13/viper"
+	"time"
+)
 
-func GetStringOrDefault(k string, d string) string {
-	if v := viper.GetString(k); v != "" {
-		return v
+func AppConfig() *Conf {
+	viper.AddConfigPath(".")
+	viper.SetConfigName("configs")
+	viper.SetConfigType("yaml")
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("%v", err)
 	}
-	return d
+	conf := defaultConf()
+	if err := viper.Unmarshal(conf); err != nil {
+		fmt.Printf("unable to decode into config struct, %v", err)
+	}
+	return conf
+}
+
+func defaultConf() *Conf {
+	return &Conf{
+		Server: serverConf{
+			Port: "8080",
+			Timeout: serverTimeoutConf{
+				Read:  30 * time.Second,
+				Write: 30 * time.Second,
+				Idle:  120 * time.Second,
+			},
+		},
+	}
 }
