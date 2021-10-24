@@ -1,0 +1,4 @@
+server:
+  mode: debug
+  timeout:
+    write: 60s

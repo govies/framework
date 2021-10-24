@@ -2,22 +2,38 @@ package logger
 
 import (
 	"context"
+	"github.com/govies/framework/config"
 	"io"
 	"os"
 
 	"github.com/rs/zerolog"
 )
 
+var (
+	configs = config.AppConfig()
+)
+
 type Logger struct {
 	logger *zerolog.Logger
 }
 
-func New(logLevel zerolog.Level) *Logger {
-	zerolog.SetGlobalLevel(logLevel)
+func New() *Logger {
+	zerolog.SetGlobalLevel(configs.Logging.ZerologLevel())
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
 	multiLevelWriter := zerolog.MultiLevelWriter(os.Stdout)
 	logger := zerolog.New(multiLevelWriter).With().Timestamp().Logger()
 	return &Logger{logger: &logger}
+}
+
+func (l *Logger) LevelByStatus(s int) *zerolog.Event {
+	switch {
+	case s >= 400 && s < 500:
+		return l.Warn()
+	case s >= 500:
+		return l.Warn()
+	default:
+		return l.Info()
+	}
 }
 
 // Output duplicates the global logger and sets w as its output.

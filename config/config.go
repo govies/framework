@@ -23,6 +23,7 @@ func AppConfig() *Conf {
 func defaultConf() *Conf {
 	return &Conf{
 		Server: serverConf{
+			Mode: "release",
 			Port: "8080",
 			Timeout: serverTimeoutConf{
 				Read:  30 * time.Second,

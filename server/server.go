@@ -3,43 +3,81 @@ package server
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/govies/framework/config"
+	"github.com/govies/framework/handler"
 	"github.com/govies/framework/logger"
-	requestlog "github.com/govies/framework/reguestlog"
-	"time"
+	"net/http"
 )
 
-func ListenAndServe() {
-	appConf := config.AppConfig()
-	log := logger.New(appConf.Logging.ZerologLevel())
+type Server struct {
+	router *gin.Engine
+}
 
-	r := gin.New()
-	r.Use(requestlog.Logger(log))
+var (
+	configs = config.AppConfig()
+	log     = logger.New()
+)
 
-	r.GET("/ping", func(c *gin.Context) {
-		time.Sleep(time.Second)
-		c.JSON(200, gin.H{
-			"test": "Hello world!",
-		})
-	})
-
-	if err := r.Run(":" + appConf.Server.Port); err != nil {
-		log.Fatal().Err(err).Msgf("Server startup failed.")
+func NewServer() *Server {
+	gin.SetMode(config.AppConfig().Logging.Level)
+	e := gin.New()
+	e.Use(handler.RequestHandler())
+	e.Use(handler.ErrorHandler())
+	e.Use(handler.RecoveryHandler())
+	return &Server{
+		router: e,
 	}
+}
 
-	//mux := http.NewServeMux()
-	//mux.HandleFunc("/", Greet)
-	//handler := requestlog.NewHandler(mux, log)
+func (s *Server) Run() error {
+	log.Info().Msgf("Server starting in %s mode on port: %s.", configs.Server.Mode, configs.Server.Port)
+	err := s.router.Run(":" + configs.Server.Port)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	//address := fmt.Sprintf(":%s", appConf.Server.Port)
-	//log.Info().Msgf("Starting server on port: %s", appConf.Server.Port)
-	//s := &http.Server{
-	//	Addr:         address,
-	//	Handler:      handler,
-	//	ReadTimeout:  appConf.Server.Timeout.Read,
-	//	WriteTimeout: appConf.Server.Timeout.Write,
-	//	IdleTimeout:  appConf.Server.Timeout.Idle,
-	//}
-	//if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	//	log.Fatal().Msg("Server startup failed")
-	//}
+func (s *Server) Group(relativePath string, handlers ...gin.HandlerFunc) *gin.RouterGroup {
+	return s.router.Group(relativePath, handlers...)
+}
+
+func (s *Server) Use(middleware ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.Use(middleware...)
+}
+
+func (s *Server) Handle(httpMethod, relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.Handle(httpMethod, relativePath, handlers...)
+}
+func (s *Server) Any(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.Any(relativePath, handlers...)
+}
+func (s *Server) GET(p string, h gin.HandlerFunc) gin.IRoutes {
+	return s.router.GET(p, h)
+}
+func (s *Server) POST(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.POST(relativePath, handlers...)
+}
+func (s *Server) DELETE(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.DELETE(relativePath, handlers...)
+}
+func (s *Server) PATCH(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.PATCH(relativePath, handlers...)
+}
+func (s *Server) PUT(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.PUT(relativePath, handlers...)
+}
+func (s *Server) OPTIONS(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.OPTIONS(relativePath, handlers...)
+}
+func (s *Server) HEAD(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return s.router.HEAD(relativePath, handlers...)
+}
+func (s *Server) StaticFile(relativePath, filepath string) gin.IRoutes {
+	return s.router.StaticFile(relativePath, filepath)
+}
+func (s *Server) Static(relativePath, root string) gin.IRoutes {
+	return s.router.Static(relativePath, root)
+}
+func (s *Server) StaticFS(relativePath string, fs http.FileSystem) gin.IRoutes {
+	return s.router.StaticFS(relativePath, fs)
 }

@@ -16,6 +16,7 @@ type logging struct {
 }
 
 type serverConf struct {
+	Mode    string            `yaml:"mode"`
 	Port    string            `yaml:"port"`
 	Timeout serverTimeoutConf `yaml:"timeout"`
 }
