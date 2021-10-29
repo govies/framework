@@ -6,22 +6,8 @@ import (
 	"time"
 )
 
-func AppConfig() *Conf {
-	viper.AddConfigPath(".")
-	viper.SetConfigName("configs")
-	viper.SetConfigType("yaml")
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("%v", err)
-	}
-	conf := defaultConf()
-	if err := viper.Unmarshal(conf); err != nil {
-		fmt.Printf("unable to decode into config struct, %v", err)
-	}
-	return conf
-}
-
-func defaultConf() *Conf {
-	return &Conf{
+func DefaultConf() *AppConf {
+	return &AppConf{
 		Server: serverConf{
 			Mode: "release",
 			Port: "8080",
@@ -31,5 +17,48 @@ func defaultConf() *Conf {
 				Idle:  120 * time.Second,
 			},
 		},
+		Logging: logging{
+			Level: "info",
+		},
+	}
+}
+
+func DefaultAppConf() *AppConf {
+	conf := DefaultConf()
+	conf.Load(DefaultFile())
+	return conf
+}
+
+type File struct {
+	Path string
+	Name string
+	Type string
+}
+
+func DefaultFile() *File {
+	return &File{
+		Path: ".",
+		Name: "configs",
+		Type: "yaml",
+	}
+}
+
+type Config interface {
+	Load(f *File)
+}
+
+func (c *AppConf) Load(f *File) {
+	LoadConfigFile(c, f)
+}
+
+func LoadConfigFile(c interface{}, f *File) {
+	viper.AddConfigPath(f.Path)
+	viper.SetConfigName(f.Name)
+	viper.SetConfigType(f.Type)
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("%v", err)
+	}
+	if err := viper.Unmarshal(c); err != nil {
+		fmt.Printf("unable to decode into config struct, %v", err)
 	}
 }

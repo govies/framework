@@ -2,27 +2,28 @@ package logger
 
 import (
 	"context"
-	"github.com/govies/framework/config"
+	"github.com/govies/onboard/config"
 	"io"
 	"os"
 
 	"github.com/rs/zerolog"
 )
 
-var (
-	configs = config.AppConfig()
-)
-
 type Logger struct {
-	logger *zerolog.Logger
+	logger   *zerolog.Logger
+	LogLevel zerolog.Level
 }
 
-func New() *Logger {
-	zerolog.SetGlobalLevel(configs.Logging.ZerologLevel())
+func New(cfg *config.AppConf) *Logger {
+	level, err := zerolog.ParseLevel(cfg.Logging.Level)
+	if err != nil {
+		level = zerolog.InfoLevel
+	}
+	zerolog.SetGlobalLevel(level)
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
 	multiLevelWriter := zerolog.MultiLevelWriter(os.Stdout)
 	logger := zerolog.New(multiLevelWriter).With().Timestamp().Logger()
-	return &Logger{logger: &logger}
+	return &Logger{logger: &logger, LogLevel: level}
 }
 
 func (l *Logger) LevelByStatus(s int) *zerolog.Event {
@@ -46,7 +47,7 @@ func (l *Logger) With() zerolog.Context {
 	return l.logger.With()
 }
 
-// Level creates a child logger with the minimum accepted level set to level.
+// Level creates a child logger with the minimum accepted logLevel set to logLevel.
 func (l *Logger) Level(level zerolog.Level) zerolog.Logger {
 	return l.logger.Level(level)
 }
@@ -61,35 +62,35 @@ func (l *Logger) Hook(h zerolog.Hook) zerolog.Logger {
 	return l.logger.Hook(h)
 }
 
-// Debug starts a new message with debug level.
+// Debug starts a new message with debug logLevel.
 //
 // You must call Msg on the returned event in order to send the event.
 func (l *Logger) Debug() *zerolog.Event {
 	return l.logger.Debug()
 }
 
-// Info starts a new message with info level.
+// Info starts a new message with info logLevel.
 //
 // You must call Msg on the returned event in order to send the event.
 func (l *Logger) Info() *zerolog.Event {
 	return l.logger.Info()
 }
 
-// Warn starts a new message with warn level.
+// Warn starts a new message with warn logLevel.
 //
 // You must call Msg on the returned event in order to send the event.
 func (l *Logger) Warn() *zerolog.Event {
 	return l.logger.Warn()
 }
 
-// Error starts a new message with error level.
+// Error starts a new message with error logLevel.
 //
 // You must call Msg on the returned event in order to send the event.
 func (l *Logger) Error() *zerolog.Event {
 	return l.logger.Error()
 }
 
-// Fatal starts a new message with fatal level. The os.Exit(1) function
+// Fatal starts a new message with fatal logLevel. The os.Exit(1) function
 // is called by the Msg method.
 //
 // You must call Msg on the returned event in order to send the event.
@@ -97,7 +98,7 @@ func (l *Logger) Fatal() *zerolog.Event {
 	return l.logger.Fatal()
 }
 
-// Panic starts a new message with panic level. The message is also sent
+// Panic starts a new message with panic logLevel. The message is also sent
 // to the panic function.
 //
 // You must call Msg on the returned event in order to send the event.
@@ -105,14 +106,14 @@ func (l *Logger) Panic() *zerolog.Event {
 	return l.logger.Panic()
 }
 
-// WithLevel starts a new message with level.
+// WithLevel starts a new message with logLevel.
 //
 // You must call Msg on the returned event in order to send the event.
 func (l *Logger) WithLevel(level zerolog.Level) *zerolog.Event {
 	return l.logger.WithLevel(level)
 }
 
-// Log starts a new message with no level. Setting zerolog.GlobalLevel to
+// Log starts a new message with no logLevel. Setting zerolog.GlobalLevel to
 // zerolog.Disabled will still disable events produced by this method.
 //
 // You must call Msg on the returned event in order to send the event.
@@ -120,13 +121,13 @@ func (l *Logger) Log() *zerolog.Event {
 	return l.logger.Log()
 }
 
-// Print sends a log event using debug level and no extra field.
+// Print sends a log event using debug logLevel and no extra field.
 // Arguments are handled in the manner of fmt.Print.
 func (l *Logger) Print(v ...interface{}) {
 	l.logger.Print(v...)
 }
 
-// Printf sends a log event using debug level and no extra field.
+// Printf sends a log event using debug logLevel and no extra field.
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Printf(format string, v ...interface{}) {
 	l.logger.Printf(format, v...)

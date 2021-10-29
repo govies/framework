@@ -3,8 +3,8 @@ package server
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/govies/framework/config"
-	"github.com/govies/framework/handler"
 	"github.com/govies/framework/logger"
+	"github.com/govies/framework/middlewares"
 	"net/http"
 )
 
@@ -12,29 +12,24 @@ type Server struct {
 	router *gin.Engine
 }
 
-var (
-	configs = config.AppConfig()
-	log     = logger.New()
-)
-
-func NewServer() *Server {
-	gin.SetMode(config.AppConfig().Logging.Level)
+func New(conf *config.AppConf, l *logger.Logger) *Server {
+	gin.SetMode(conf.Server.Mode)
 	e := gin.New()
-	e.Use(handler.RequestHandler())
-	e.Use(handler.ErrorHandler())
-	e.Use(handler.RecoveryHandler())
-	return &Server{
-		router: e,
-	}
+
+	l.Info().Msg("initializing middlewares")
+	e.Use(
+		middlewares.Recovery(l, conf),
+		middlewares.RequestLogging(l),
+	)
+
+	return &Server{router: e}
 }
 
-func (s *Server) Run() error {
-	log.Info().Msgf("Server starting in %s mode on port: %s.", configs.Server.Mode, configs.Server.Port)
-	err := s.router.Run(":" + configs.Server.Port)
-	if err != nil {
-		return err
+func (s *Server) Run(conf *config.AppConf, l *logger.Logger) {
+	l.Info().Msgf("server starting on port: %s", conf.Server.Port)
+	if err := s.router.Run(":" + conf.Server.Port); err != nil {
+		l.Fatal().Err(err).Msg("Error while starting server.")
 	}
-	return nil
 }
 
 func (s *Server) Group(relativePath string, handlers ...gin.HandlerFunc) *gin.RouterGroup {

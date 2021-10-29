@@ -1,4 +1,4 @@
-package handler
+package logger
 
 import (
 	"github.com/rs/zerolog"
@@ -14,6 +14,10 @@ const (
 	Error                        = "error"
 )
 
+type Logging interface {
+	Log(l *Logger)
+}
+
 type BaseLogEntry struct {
 	Type       RequestResponseType
 	TrackingId string
@@ -26,15 +30,15 @@ type BaseLogEntry struct {
 	UserAgent string
 }
 
-type requestLogEntry struct {
+type RequestLogEntry struct {
 	BaseLogEntry  *BaseLogEntry
 	ReceivedTime  time.Time
 	RequestBody   string
 	RequestHeader string
 }
 
-func (r requestLogEntry) log() {
-	log.Info().
+func (r *RequestLogEntry) Log(l *Logger) {
+	l.Info().
 		Str("type", string(r.BaseLogEntry.Type)).
 		Str("tracking_id", r.BaseLogEntry.TrackingId).
 		Time("received_time", r.ReceivedTime).
@@ -48,7 +52,7 @@ func (r requestLogEntry) log() {
 		Msg("")
 }
 
-type responseLogEntry struct {
+type ResponseLogEntry struct {
 	BaseLogEntry   *BaseLogEntry
 	FinishedTime   time.Time
 	Status         int
@@ -56,8 +60,8 @@ type responseLogEntry struct {
 	ResponseHeader string
 }
 
-func (r responseLogEntry) log() {
-	log.LevelByStatus(r.Status).
+func (r ResponseLogEntry) Log(l *Logger) {
+	l.LevelByStatus(r.Status).
 		Str("type", string(r.BaseLogEntry.Type)).
 		Str("tracking_id", r.BaseLogEntry.TrackingId).
 		Time("finished_time", r.FinishedTime).
@@ -72,7 +76,7 @@ func (r responseLogEntry) log() {
 		Msg("")
 }
 
-type summaryLogEntry struct {
+type SummaryLogEntry struct {
 	BaseLogEntry *BaseLogEntry
 	Status       int
 	ReceivedTime time.Time
@@ -80,8 +84,8 @@ type summaryLogEntry struct {
 	Latency      time.Duration
 }
 
-func (s summaryLogEntry) log() {
-	log.LevelByStatus(s.Status).
+func (s SummaryLogEntry) Log(l *Logger) {
+	l.LevelByStatus(s.Status).
 		Str("type", string(s.BaseLogEntry.Type)).
 		Str("tracking_id", s.BaseLogEntry.TrackingId).
 		Time("received_time", s.ReceivedTime).
@@ -106,9 +110,9 @@ type ErrorLogEntry struct {
 	Stack        string
 }
 
-func (e ErrorLogEntry) Log() {
-	if conf.Logging.ZerologLevel() == zerolog.DebugLevel {
-		log.LevelByStatus(e.Status).
+func (e ErrorLogEntry) Log(l *Logger) {
+	if l.LogLevel <= zerolog.DebugLevel {
+		l.LevelByStatus(e.Status).
 			Str("type", string(e.BaseLogEntry.Type)).
 			Str("tracking_id", e.BaseLogEntry.TrackingId).
 			Time("received_time", e.ReceivedTime).
@@ -124,7 +128,7 @@ func (e ErrorLogEntry) Log() {
 			Str("agent", e.BaseLogEntry.UserAgent).
 			Msg("")
 	} else {
-		log.LevelByStatus(e.Status).
+		l.LevelByStatus(e.Status).
 			Str("type", string(e.BaseLogEntry.Type)).
 			Str("tracking_id", e.BaseLogEntry.TrackingId).
 			Time("received_time", e.ReceivedTime).

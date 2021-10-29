@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Conf struct {
+type AppConf struct {
 	Server  serverConf `yaml:"server"`
 	Logging logging    `yaml:"logging"`
 }

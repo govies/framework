@@ -1,10 +1,11 @@
-package handler
+package middlewares
 
 import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/govies/onboard/logger"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,11 +13,12 @@ import (
 	"time"
 )
 
-func RequestHandler() gin.HandlerFunc {
+func RequestLogging(l *logger.Logger) gin.HandlerFunc {
+	l.Info().Msg("initializing request logging middleware")
 	return func(c *gin.Context) {
 		receivedTime := time.Now()
 		hostname, _ := os.Hostname()
-		baseLogEntry := &BaseLogEntry{
+		baseLogEntry := &logger.BaseLogEntry{
 			TrackingId:    GetTrackingId(&c.Request.Header),
 			RequestURL:    GetFullPath(c.Request.URL),
 			UserAgent:     c.Request.UserAgent(),
@@ -30,39 +32,53 @@ func RequestHandler() gin.HandlerFunc {
 
 		requestHeaderMarshal, _ := json.Marshal(c.Request.Header)
 		requestBodyMarshal, _ := json.Marshal(c.Request.Body)
-		baseLogEntry.Type = Request
-		requestLog := &requestLogEntry{
+		baseLogEntry.Type = logger.Request
+		requestLog := &logger.requestLogEntry{
 			BaseLogEntry:  baseLogEntry,
 			ReceivedTime:  receivedTime,
 			RequestBody:   string(requestBodyMarshal),
 			RequestHeader: string(requestHeaderMarshal),
 		}
-		requestLog.log()
+		requestLog.Log(l)
 
 		c.Next()
 		latency := time.Since(receivedTime)
 		finishedTime := receivedTime.Add(latency)
 
 		responseHeaderMarshal, _ := json.Marshal(c.Writer.Header())
-		baseLogEntry.Type = Response
-		responseLogEntry := responseLogEntry{
+		baseLogEntry.Type = logger.Response
+		responseLogEntry := logger.responseLogEntry{
 			BaseLogEntry:   baseLogEntry,
 			Status:         c.Writer.Status(),
 			ResponseBody:   blw.body.String(),
 			ResponseHeader: string(responseHeaderMarshal),
 			FinishedTime:   finishedTime,
 		}
-		responseLogEntry.log()
+		responseLogEntry.Log(l)
 
-		baseLogEntry.Type = Summary
-		summaryLogEntry := summaryLogEntry{
+		baseLogEntry.Type = logger.Summary
+		summaryLogEntry := logger.summaryLogEntry{
 			BaseLogEntry: baseLogEntry,
 			Status:       c.Writer.Status(),
 			Latency:      latency,
 			FinishedTime: finishedTime,
 			ReceivedTime: receivedTime,
 		}
-		summaryLogEntry.log()
+		summaryLogEntry.Log(l)
+
+		err := c.Errors.Last()
+		if err != nil {
+			baseLogEntry.Type = logger.Error
+			errorLogEntry := logger.ErrorLogEntry{
+				BaseLogEntry: baseLogEntry,
+				ReceivedTime: receivedTime,
+				Error:        err.Unwrap(),
+				FinishedTime: finishedTime,
+				Latency:      latency,
+				Status:       c.Writer.Status(),
+			}
+			errorLogEntry.Log(l)
+		}
 	}
 }
 
