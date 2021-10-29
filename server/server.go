@@ -9,7 +9,7 @@ import (
 )
 
 type Server struct {
-	router *gin.Engine
+	Engine *gin.Engine
 }
 
 func New(conf *config.AppConf, l *logger.Logger) *Server {
@@ -22,57 +22,57 @@ func New(conf *config.AppConf, l *logger.Logger) *Server {
 		middlewares.RequestLogging(l),
 	)
 
-	return &Server{router: e}
+	return &Server{Engine: e}
 }
 
 func (s *Server) Run(conf *config.AppConf, l *logger.Logger) {
 	l.Info().Msgf("server starting on port: %s", conf.Server.Port)
-	if err := s.router.Run(":" + conf.Server.Port); err != nil {
+	if err := s.Engine.Run(":" + conf.Server.Port); err != nil {
 		l.Fatal().Err(err).Msg("Error while starting server.")
 	}
 }
 
 func (s *Server) Group(relativePath string, handlers ...gin.HandlerFunc) *gin.RouterGroup {
-	return s.router.Group(relativePath, handlers...)
+	return s.Engine.Group(relativePath, handlers...)
 }
 
 func (s *Server) Use(middleware ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.Use(middleware...)
+	return s.Engine.Use(middleware...)
 }
 
 func (s *Server) Handle(httpMethod, relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.Handle(httpMethod, relativePath, handlers...)
+	return s.Engine.Handle(httpMethod, relativePath, handlers...)
 }
 func (s *Server) Any(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.Any(relativePath, handlers...)
+	return s.Engine.Any(relativePath, handlers...)
 }
 func (s *Server) GET(p string, h gin.HandlerFunc) gin.IRoutes {
-	return s.router.GET(p, h)
+	return s.Engine.GET(p, h)
 }
 func (s *Server) POST(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.POST(relativePath, handlers...)
+	return s.Engine.POST(relativePath, handlers...)
 }
 func (s *Server) DELETE(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.DELETE(relativePath, handlers...)
+	return s.Engine.DELETE(relativePath, handlers...)
 }
 func (s *Server) PATCH(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.PATCH(relativePath, handlers...)
+	return s.Engine.PATCH(relativePath, handlers...)
 }
 func (s *Server) PUT(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.PUT(relativePath, handlers...)
+	return s.Engine.PUT(relativePath, handlers...)
 }
 func (s *Server) OPTIONS(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.OPTIONS(relativePath, handlers...)
+	return s.Engine.OPTIONS(relativePath, handlers...)
 }
 func (s *Server) HEAD(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return s.router.HEAD(relativePath, handlers...)
+	return s.Engine.HEAD(relativePath, handlers...)
 }
 func (s *Server) StaticFile(relativePath, filepath string) gin.IRoutes {
-	return s.router.StaticFile(relativePath, filepath)
+	return s.Engine.StaticFile(relativePath, filepath)
 }
 func (s *Server) Static(relativePath, root string) gin.IRoutes {
-	return s.router.Static(relativePath, root)
+	return s.Engine.Static(relativePath, root)
 }
 func (s *Server) StaticFS(relativePath string, fs http.FileSystem) gin.IRoutes {
-	return s.router.StaticFS(relativePath, fs)
+	return s.Engine.StaticFS(relativePath, fs)
 }
