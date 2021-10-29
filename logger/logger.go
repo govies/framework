@@ -2,7 +2,7 @@ package logger
 
 import (
 	"context"
-	"github.com/govies/onboard/config"
+	"github.com/govies/framework/config"
 	"io"
 	"os"
 

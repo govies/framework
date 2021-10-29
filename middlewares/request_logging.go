@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/govies/onboard/logger"
+	"github.com/govies/framework/logger"
 	"net"
 	"net/http"
 	"net/url"
@@ -33,7 +33,7 @@ func RequestLogging(l *logger.Logger) gin.HandlerFunc {
 		requestHeaderMarshal, _ := json.Marshal(c.Request.Header)
 		requestBodyMarshal, _ := json.Marshal(c.Request.Body)
 		baseLogEntry.Type = logger.Request
-		requestLog := &logger.requestLogEntry{
+		requestLog := &logger.RequestLogEntry{
 			BaseLogEntry:  baseLogEntry,
 			ReceivedTime:  receivedTime,
 			RequestBody:   string(requestBodyMarshal),
@@ -47,7 +47,7 @@ func RequestLogging(l *logger.Logger) gin.HandlerFunc {
 
 		responseHeaderMarshal, _ := json.Marshal(c.Writer.Header())
 		baseLogEntry.Type = logger.Response
-		responseLogEntry := logger.responseLogEntry{
+		responseLogEntry := logger.ResponseLogEntry{
 			BaseLogEntry:   baseLogEntry,
 			Status:         c.Writer.Status(),
 			ResponseBody:   blw.body.String(),
@@ -57,7 +57,7 @@ func RequestLogging(l *logger.Logger) gin.HandlerFunc {
 		responseLogEntry.Log(l)
 
 		baseLogEntry.Type = logger.Summary
-		summaryLogEntry := logger.summaryLogEntry{
+		summaryLogEntry := logger.SummaryLogEntry{
 			BaseLogEntry: baseLogEntry,
 			Status:       c.Writer.Status(),
 			Latency:      latency,

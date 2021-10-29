@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/go-errors/errors"
-	err "github.com/govies/onboard/error"
-	"github.com/govies/onboard/logger"
+	err "github.com/govies/framework/error"
+	"github.com/govies/framework/logger"
 	"github.com/rs/zerolog"
 )
 
