@@ -5,8 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-errors/errors"
 	err "github.com/govies/framework/error"
-	"github.com/govies/framework/logger"
-	"github.com/rs/zerolog"
 )
 
 type Response struct {
@@ -41,11 +39,8 @@ func ErrorDto(s int, e *err.Dto) *Response {
 	}
 }
 
-func (r *Response) Send(c *gin.Context, l *logger.Logger) {
+func (r *Response) Send(c *gin.Context) {
 	if !r.Success {
-		if l.LogLevel > zerolog.DebugLevel {
-			r.Errors.DebugMessages = nil
-		}
 		marshal, _ := json.Marshal(r.Errors)
 		_ = c.Error(errors.New(string(marshal)))
 	}

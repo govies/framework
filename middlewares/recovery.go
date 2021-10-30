@@ -25,22 +25,22 @@ func Recovery(l *logger.Logger, cfg *config.AppConf) gin.HandlerFunc {
 				} else {
 					fmt.Printf("Received: %v, ErrorDto message: %v, Stack: %v", time.Now(), goErr, goErr.ErrorStack())
 				}
-				sendServerError(c, cfg, l, goErr)
+				sendServerError(c, cfg, goErr)
 			}
 		}()
 		c.Next()
 	}
 }
 
-func sendServerError(c *gin.Context, cfg *config.AppConf, l *logger.Logger, goErr *errors.Error) {
+func sendServerError(c *gin.Context, cfg *config.AppConf, goErr *errors.Error) {
 	errorDto := error.FromErrors(http.StatusInternalServerError, goErr)
 	errorDto.UserMessage = "Something went wrong"
 
 	if cfg.Logging.ZerologLevel() <= zerolog.DebugLevel {
 		errorDto.Stack = goErr.ErrorStack()
-		resp.ErrorDto(http.StatusInternalServerError, errorDto).Send(c, l)
+		resp.ErrorDto(http.StatusInternalServerError, errorDto).Send(c)
 	} else {
-		resp.ErrorDto(http.StatusInternalServerError, errorDto).Send(c, l)
+		resp.ErrorDto(http.StatusInternalServerError, errorDto).Send(c)
 	}
 }
 
